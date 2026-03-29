@@ -15,7 +15,9 @@ export default function App() {
           <div class="hero-content">
             <h1 class="hero-title">REIMAGINE<br/>REIMBURSEMENT<br/>CHAOS.</h1>
             <p class="hero-subtitle">The Smarter Way to Track, Approve, and Get Paid. Automated expense flows for modern teams.</p>
-            <button class="btn btn-primary btn-glow">GET STARTED</button>
+            <button id="get-started-btn" class="btn btn-primary btn-glow">
+               GET STARTED
+            </button>
             
             <div class="features-row">
               <div class="glass-card feature-mini">

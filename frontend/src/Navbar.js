@@ -26,7 +26,9 @@ export default function Navbar() {
           <li><a href="#faq">FAQ</a></li>
         </ul>
         <div class="nav-actions">
-          <a href="#" class="btn btn-primary">Get Started</a>
+          <button id="get-started-btn" class="btn btn-primary btn-glow">
+            GET STARTED
+          </button>
         </div>
       </div>
     </nav>

@@ -12,9 +12,9 @@
   },
   "main": "index.js",
   "dependencies": {
-    "three": "^0.183.2",
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
     "detect-libc": "^2.1.2",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -31,6 +31,7 @@
     "rolldown": "^1.0.0-rc.12",
     "sequelize": "^6.37.8",
     "source-map-js": "^1.2.1",
+    "three": "^0.183.2",
     "tinyglobby": "^0.2.15"
   },
   "repository": {
