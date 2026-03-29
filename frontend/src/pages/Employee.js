@@ -13,6 +13,14 @@ export default function Employee() {
                </div>
             </header>
             <div class="dash-body">
+               <div id="ocr-upload-section" class="mb-4" style="background:#e2e8f0; padding:15px; border-radius:8px; border:1px dashed #94a3b8; text-align:center;">
+                  <h5>✨ Auto-Fill with AI Receipt Scanner</h5>
+                  <p class="text-muted-dark" style="font-size:0.85rem;">Upload a receipt and we'll extract the details, including automatic currency conversion.</p>
+                  <input type="file" id="receipt-upload" accept="image/*" class="mt-2" style="font-size:0.9rem;">
+                  <div id="ocr-loading" style="display:none; color:#3b82f6; font-weight:bold; margin-top:10px;">⏳ Scanning and converting...</div>
+                  <div id="ocr-error" style="display:none; color:#ef4444; margin-top:10px; font-size:0.85rem;"></div>
+               </div>
+
                <form id="employee-expense-form" class="admin-form light-form mb-5">
                   <h4>Submit New Expense</h4>
                   <div class="row mt-3">

@@ -330,6 +330,7 @@ function attachAdminEvents() {
        // Lazy load data for tabs
        if (tab.dataset.tab === 'hierarchy') loadHierarchyOptions();
        if (tab.dataset.tab === 'approvals') loadAdminExpenses();
+       if (tab.dataset.tab === 'workflows') loadWorkflowSteps();
     });
   });
 
@@ -407,8 +408,88 @@ function attachAdminEvents() {
     });
   }
 
+  // ── Workflow Configuration form ────────────────────────────
+  const workflowForm = document.getElementById('workflow-form');
+  if (workflowForm) {
+    workflowForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rawRole = document.getElementById('workflow-role').value;
+      const role = rawRole;
+      const is_manager_approver = (rawRole === 'MANAGER');
+
+      try {
+        // Fetch existing first to find order
+        const res = await fetch(`${API_BASE}/workflow-steps`, { headers: authHeaders() });
+        const existing = await res.json();
+        
+        const newStep = {
+          step_order: existing.length + 1,
+          role: role,
+          is_manager_approver
+        };
+        
+        const payload = { steps: [...existing, newStep] };
+
+        const saveRes = await fetch(`${API_BASE}/workflow-steps`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (!saveRes.ok) throw new Error('Failed to append workflow step');
+        
+        loadWorkflowSteps();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('preset-workflow-btn')?.addEventListener('click', async () => {
+       if(!confirm('Reset to Manager -> Finance -> Director?')) return;
+       try {
+         const payload = {
+            steps: [
+              { step_order: 1, role: 'MANAGER', is_manager_approver: true },
+              { step_order: 2, role: 'FINANCE', is_manager_approver: false },
+              { step_order: 3, role: 'DIRECTOR', is_manager_approver: false }
+            ]
+         };
+         await fetch(`${API_BASE}/workflow-steps`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+         });
+         loadWorkflowSteps();
+       } catch(e) { alert(e.message); }
+    });
+  }
+
   // ── Load invited users on page load ────────────────────────────
   loadInvitedUsers();
+}
+
+async function loadWorkflowSteps() {
+  const list = document.getElementById('workflow-steps-list');
+  if (!list) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/workflow-steps`, { headers: authHeaders() });
+    const steps = await res.json();
+    
+    if (steps.length === 0) {
+      list.innerHTML = '<span style="color:#ef4444; font-weight:500;">❌ No Workflow Configured. Expenses cannot be submitted.</span>';
+      return;
+    }
+
+    list.innerHTML = steps.map((s, i) => `
+      <div style="background:white; padding:12px 18px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); display:flex; align-items:center;">
+         <div style="background:#3b82f6; color:white; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:15px;">${i+1}</div>
+         <strong style="font-size:1rem; color:#0f172a;">${s.is_manager_approver ? 'Direct Manager' : s.role}</strong>
+      </div>
+    `).join('<div style="color:#94a3b8; font-size:1.2rem; text-align:center;">↓</div>');
+  } catch (err) {
+    list.innerHTML = `<span style="color:red">Failed to load workflows: ${err.message}</span>`;
+  }
 }
 
 
@@ -639,6 +720,67 @@ window.showAdminExpenseDetails = function(expId) {
 // ──────────────────────────────────────────────────────────────────
 
 function attachEmployeeEvents() {
+  const ocrInput = document.getElementById('receipt-upload');
+  if (ocrInput) {
+    ocrInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const loadingBlock = document.getElementById('ocr-loading');
+      const errorBlock = document.getElementById('ocr-error');
+      loadingBlock.style.display = 'block';
+      errorBlock.style.display = 'none';
+      
+      const formData = new FormData();
+      formData.append('receipt', file);
+
+      try {
+        const res = await fetch(`${API_BASE}/expenses/ocr`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to scan receipt');
+
+        const { parsed } = data;
+        
+        // Auto-fill the form
+        if (parsed.amount > 0) document.getElementById('exp-amount').value = parsed.amount;
+        
+        // Find matching currency in select dropdown
+        const currencySelect = document.getElementById('exp-currency');
+        Array.from(currencySelect.options).forEach(opt => {
+          if (opt.value === parsed.companyCurrency) opt.selected = true;
+        });
+
+        // Try to match category
+        if (parsed.category) {
+          const catSelect = document.getElementById('exp-category');
+          Array.from(catSelect.options).forEach(opt => {
+            if (opt.value === parsed.category) opt.selected = true;
+          });
+        }
+        
+        if (parsed.date) document.getElementById('exp-date').value = parsed.date;
+        if (parsed.description) document.getElementById('exp-desc').value = parsed.description;
+
+        // Reset file input
+        ocrInput.value = '';
+        alert('✨ Receipt scanned! Please review the auto-filled details.');
+        
+      } catch (err) {
+        errorBlock.style.display = 'block';
+        errorBlock.innerText = `❌ ${err.message}`;
+      } finally {
+        loadingBlock.style.display = 'none';
+      }
+    });
+  }
+
   const form = document.getElementById('employee-expense-form');
   if (form) {
     form.addEventListener('submit', async (e) => {

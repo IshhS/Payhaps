@@ -3,8 +3,11 @@ const {
   Expense,
   ExpenseApproval,
   User,
+  Company,
 } = require("../models");
 const { buildApprovalChain } = require("../services/expense.service");
+const { parseReceipt } = require("../utils/ocr");
+const { convert } = require("../utils/currency");
 
 /**
  * POST /api/expenses
@@ -420,5 +423,64 @@ exports.getAllExpenses = async (req, res) => {
     return res.json(expenses);
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * POST /api/expenses/ocr
+ * Real OCR — upload receipt, extract fields, detect currency, convert to company currency.
+ */
+exports.processOcrReceipt = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Receipt image is required." });
+    }
+
+    const path = require("path");
+    // absolute path to the uploaded file
+    const filePath = path.resolve(req.file.destination, req.file.filename);
+
+    const parsed = await parseReceipt(filePath);
+
+    // Look up the company's base currency
+    const user = await User.findByPk(req.user.id, {
+      include: [{ model: Company }],
+    });
+    
+    // Fallback if not set
+    const companyCurrency = user.Company?.currency || "USD";
+
+    const receiptCurrency = parsed.detectedCurrency || "USD";
+    if (receiptCurrency !== companyCurrency && parsed.amount > 0) {
+      try {
+        const { converted, rate } = await convert(
+          parsed.amount,
+          receiptCurrency,
+          companyCurrency
+        );
+        parsed.originalAmount = parsed.amount;
+        parsed.originalCurrency = receiptCurrency;
+        parsed.convertedAmount = converted;
+        parsed.companyCurrency = companyCurrency;
+        parsed.exchangeRate = rate;
+        parsed.amount = converted; // Set the form amount to the converted value
+
+        console.log(`💱 Converted ${receiptCurrency} ${parsed.originalAmount} -> ${companyCurrency} ${converted} at rate ${rate}`);
+      } catch (convErr) {
+        console.error("Currency conversion error:", convErr.message);
+        parsed.originalAmount = parsed.amount;
+        parsed.originalCurrency = receiptCurrency;
+        parsed.companyCurrency = companyCurrency;
+      }
+    } else {
+      parsed.companyCurrency = companyCurrency;
+      parsed.originalCurrency = receiptCurrency;
+      parsed.originalAmount = parsed.amount;
+    }
+
+    return res.json({ parsed });
+  } catch (err) {
+    console.error("OCR error in controller:", err);
+    return res.status(500).json({ error: err.message || "OCR parsing failed" });
   }
 };

@@ -14,6 +14,9 @@ export default function Admin() {
               <li data-tab="hierarchy">
                  <span class="icon">📊</span> Company Hierarchy
               </li>
+              <li data-tab="workflows">
+                 <span class="icon">⚙️</span> Approval Workflow
+              </li>
               <li data-tab="approvals">
                  <span class="icon">📁</span> Expense Approvals
               </li>
@@ -112,6 +115,39 @@ export default function Admin() {
                           <p class="text-muted-dark">Loading tree...</p>
                        </div>
                     </div>
+                 </div>
+              </section>
+
+              <!-- Tab: Workflows -->
+              <section id="tab-workflows" class="tab-pane">
+                 <div class="white-panel shadow-sm">
+                    <h3>Approval Workflow Configuration</h3>
+                    <p class="text-muted-dark">Define the sequence of approvers for employee expenses.</p>
+                    
+                    <div class="mt-4 p-4" style="background:#f1f5f9; border-radius:8px; border:1px solid #e2e8f0;">
+                       <h5 class="mb-3">Current Workflow Sequence</h5>
+                       <div id="workflow-steps-list" style="display:flex; flex-direction:column; gap:10px;">
+                          <p class="text-muted-dark">Loading...</p>
+                       </div>
+                    </div>
+
+                    <form id="workflow-form" class="admin-form light-form mt-4 border-top pt-4">
+                       <h5>Add New Step</h5>
+                       <div class="row align-items-end mt-3">
+                          <div class="input-group half">
+                             <label>Approver Role</label>
+                             <select id="workflow-role" required>
+                                <option value="MANAGER">Direct Manager (Reports To)</option>
+                                <option value="FINANCE">Finance Team</option>
+                                <option value="DIRECTOR">Director</option>
+                             </select>
+                          </div>
+                          <div class="input-group half">
+                             <button type="submit" class="btn btn-outline-primary" style="width:100%; border:2px dashed #3b82f6;">+ Append Step to Workflow</button>
+                          </div>
+                       </div>
+                       <button type="button" id="preset-workflow-btn" class="btn btn-success mt-3 px-4 py-2" style="font-size:0.85rem;">Reset to Recommended (Manager -> Finance -> Director)</button>
+                    </form>
                  </div>
               </section>
 
