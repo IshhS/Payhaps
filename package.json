@@ -12,6 +12,7 @@
   },
   "main": "index.js",
   "dependencies": {
+    "three": "^0.183.2",
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
     "detect-libc": "^2.1.2",
