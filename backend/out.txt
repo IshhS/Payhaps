@@ -1,0 +1,36 @@
+Login Failed, cannot test workflow. Getting first user...
+[dotenv@17.3.1] injecting env (10) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+Testing POST /api/workflow-steps...
+Status: 201
+Response: {
+  message: '3 workflow steps configured.',
+  steps: [
+    {
+      id: 4,
+      company_id: 1,
+      step_order: 1,
+      role: 'MANAGER',
+      is_manager_approver: true,
+      createdAt: '2026-03-29T11:36:02.186Z',
+      updatedAt: '2026-03-29T11:36:02.186Z'
+    },
+    {
+      id: 5,
+      company_id: 1,
+      step_order: 2,
+      role: 'FINANCE',
+      is_manager_approver: false,
+      createdAt: '2026-03-29T11:36:02.186Z',
+      updatedAt: '2026-03-29T11:36:02.186Z'
+    },
+    {
+      id: 6,
+      company_id: 1,
+      step_order: 3,
+      role: 'DIRECTOR',
+      is_manager_approver: false,
+      createdAt: '2026-03-29T11:36:02.186Z',
+      updatedAt: '2026-03-29T11:36:02.186Z'
+    }
+  ]
+}

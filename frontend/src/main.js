@@ -454,13 +454,20 @@ function attachAdminEvents() {
               { step_order: 3, role: 'DIRECTOR', is_manager_approver: false }
             ]
          };
-         await fetch(`${API_BASE}/workflow-steps`, {
+         const res = await fetch(`${API_BASE}/workflow-steps`, {
             method: 'POST',
             headers: authHeaders(),
             body: JSON.stringify(payload)
          });
+         
+         const data = await res.json();
+         if (!res.ok) {
+           throw new Error(data.error || data.msg || 'Save failed');
+         }
+         
          loadWorkflowSteps();
-       } catch(e) { alert(e.message); }
+         alert('Workflow preset applied successfully!');
+       } catch(e) { alert("Error saving: " + e.message); }
     });
   }
 
