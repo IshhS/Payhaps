@@ -1141,3 +1141,81 @@ body {
 .chain-step.pending .step-dot { background: #eab308; border-color: #eab308; color: white; }
 .step-info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
 .step-info span { font-size: 0.75rem; color: #64748b; }
+
+/* =========================================
+   SET PASSWORD PAGE
+========================================= */
+.set-password-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  background-image: var(--bg-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+.set-password-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+}
+
+.glow-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #10b981 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+  animation: glowFloat 8s ease-in-out infinite alternate;
+}
+
+.glow-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #064e3b 0%, transparent 70%);
+  bottom: -80px;
+  left: -80px;
+  animation: glowFloat 10s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes glowFloat {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -20px) scale(1.15); }
+}
+
+.set-password-modal {
+  position: relative;
+  z-index: 10;
+  width: 90%;
+  max-width: 440px;
+  animation: slideUp 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.set-password-modal .lock-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  animation: lockBounce 1s ease-in-out;
+}
+
+@keyframes lockBounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.mt-4 { margin-top: 20px; }
+.mb-4 { margin-bottom: 20px; }

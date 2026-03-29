@@ -11,10 +11,11 @@ app.use(express.json());
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const expenseRoutes = require("./routes/expense.routes");
-
-app.use("/api/users", userRoutes);
-app.use("/api/expenses", expenseRoutes);
+const workflowRoutes = require("./routes/workflow.routes");
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/workflow-steps", workflowRoutes);
 
 module.exports = app;

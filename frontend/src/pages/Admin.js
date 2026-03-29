@@ -44,29 +44,39 @@ export default function Admin() {
                  <div class="white-panel shadow-sm">
                     <h3>Add Users & Assign Roles</h3>
                     <p class="text-muted-dark mb-4">Invite users and assign their capabilities in the system.</p>
-                    <form class="admin-form light-form mt-4">
+                    <form id="invite-user-form" class="admin-form light-form mt-4">
                        <div class="row">
                           <div class="input-group half">
                              <label>Full Name</label>
-                             <input type="text" placeholder="e.g. John Doe" required>
+                             <input id="invite-name" type="text" placeholder="e.g. John Doe" required>
                           </div>
                           <div class="input-group half">
                              <label>Email Address</label>
-                             <input type="email" placeholder="john@example.com" required>
+                             <input id="invite-email" type="email" placeholder="john@example.com" required>
                           </div>
                        </div>
                        <div class="input-group mt-3">
                           <label>Assign System Role</label>
-                          <select required>
+                          <select id="invite-role" required>
                              <option value="" disabled selected>Select Role</option>
-                             <option value="employee">Employee</option>
-                             <option value="manager">Manager</option>
-                             <option value="finance">Finance</option>
-                             <option value="director">Director</option>
+                             <option value="EMPLOYEE">Employee</option>
+                             <option value="MANAGER">Manager</option>
+                             <option value="FINANCE">Finance</option>
+                             <option value="DIRECTOR">Director</option>
                           </select>
                        </div>
+                       <div id="invite-status" style="margin-top:12px; font-size:0.9rem;"></div>
                        <button type="submit" class="btn btn-primary mt-4">Invite User</button>
                     </form>
+                 </div>
+
+                 <!-- Invited Users List -->
+                 <div class="white-panel shadow-sm mt-4">
+                    <h3>Invited Users</h3>
+                    <p class="text-muted-dark mb-4">Users that have been invited to the system.</p>
+                    <div id="invited-users-list">
+                       <p style="color:#94a3b8; font-style:italic;">Loading...</p>
+                    </div>
                  </div>
               </section>
 
