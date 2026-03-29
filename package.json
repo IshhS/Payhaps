@@ -2,7 +2,6 @@
   "name": "payhaps",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,5 +9,39 @@
   },
   "devDependencies": {
     "vite": "^8.0.1"
-  }
+  },
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.14.0",
+    "bcryptjs": "^3.0.3",
+    "detect-libc": "^2.1.2",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "fdir": "^6.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "lightningcss": "^1.32.0",
+    "lightningcss-win32-x64-msvc": "^1.32.0",
+    "mysql2": "^3.20.0",
+    "nanoid": "^3.3.11",
+    "nodemailer": "^8.0.4",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.4",
+    "postcss": "^8.5.8",
+    "rolldown": "^1.0.0-rc.12",
+    "sequelize": "^6.37.8",
+    "source-map-js": "^1.2.1",
+    "tinyglobby": "^0.2.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IshhS/Payhaps.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IshhS/Payhaps/issues"
+  },
+  "homepage": "https://github.com/IshhS/Payhaps#readme",
+  "description": ""
 }
