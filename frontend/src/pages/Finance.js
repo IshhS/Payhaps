@@ -24,7 +24,9 @@ export default function Finance() {
                   </div>
                </div>
                <h4 class="mb-3">Awaiting Finance Approval</h4>
-               <p class="text-muted-dark" style="font-size:0.9rem;">No pending approvals.</p>
+               <ul id="pending-approvals-list" class="approval-list">
+                 <p class="text-muted-dark" style="font-size:0.9rem;">Loading pending approvals...</p>
+               </ul>
             </div>
          </div>
       </div>

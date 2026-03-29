@@ -32,6 +32,8 @@ function loadLanding() {
 function loadDashboard(Component, role) {
   root.innerHTML = Component();
   if (role === 'admin') attachAdminEvents();
+  if (role === 'employee') attachEmployeeEvents();
+  if (role === 'manager' || role === 'finance' || role === 'director') attachApproverEvents(role);
   
   setTimeout(() => {
      document.getElementById('logout-btn')?.addEventListener('click', () => {
@@ -324,6 +326,10 @@ function attachAdminEvents() {
        tab.classList.add('active');
        const targetId = 'tab-' + tab.dataset.tab;
        document.getElementById(targetId).classList.add('active');
+
+       // Lazy load data for tabs
+       if (tab.dataset.tab === 'hierarchy') loadHierarchyOptions();
+       if (tab.dataset.tab === 'approvals') loadAdminExpenses();
     });
   });
 
@@ -371,6 +377,32 @@ function attachAdminEvents() {
         loadInvitedUsers();
       } catch (err) {
         statusDiv.innerHTML = `<span style="color:#ef4444;">❌ ${err.message}</span>`;
+      }
+    });
+  }
+
+  // ── Hierarchy User Assignment form ────────────────────────────
+  const hierarchyForm = document.getElementById('hierarchy-form');
+  if (hierarchyForm) {
+    hierarchyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('hierarchy-user').value;
+      const managerId = document.getElementById('hierarchy-manager').value;
+      
+      if (!userId || !managerId) return alert('Please select both a user and a manager/approver');
+      
+      try {
+        const res = await fetch(`${API_BASE}/users/${userId}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ manager_id: managerId })
+        });
+        if (!res.ok) throw new Error('Failed to update user assigned manager');
+        
+        alert('Hierarchy mapping saved successfully!');
+        loadHierarchyOptions(); // Refresh the dropdowns and tree
+      } catch (err) {
+        alert(err.message);
       }
     });
   }
@@ -445,3 +477,297 @@ async function loadInvitedUsers() {
     container.innerHTML = `<p style="color:#ef4444;">Error: ${err.message}</p>`;
   }
 }
+
+// ──────────────────────────────────────────────────────────────────
+// 🏢 ADMIN: HIERARCHY & EXPENSES
+// ──────────────────────────────────────────────────────────────────
+
+async function loadHierarchyOptions() {
+  try {
+    const res = await fetch(`${API_BASE}/users`, { headers: authHeaders() });
+    const users = await res.json();
+    
+    const userSelect = document.getElementById('hierarchy-user');
+    const managerSelect = document.getElementById('hierarchy-manager');
+    if (!userSelect || !managerSelect) return;
+
+    let options = '<option value="" disabled selected>Select...</option>';
+    let managerOptions = '<option value="" disabled selected>Select Approver...</option>';
+    
+    users.forEach(u => {
+      const label = `${u.name} (${u.role})`;
+      options += `<option value="${u.id}">${label}</option>`;
+      if (u.role === 'MANAGER' || u.role === 'FINANCE' || u.role === 'DIRECTOR' || u.role === 'ADMIN') {
+        managerOptions += `<option value="${u.id}">${label}</option>`;
+      }
+    });
+
+    userSelect.innerHTML = options;
+    managerSelect.innerHTML = managerOptions;
+
+    buildHierarchyTree(users);
+  } catch (err) {
+    console.error("Failed to load hierarchy options", err);
+  }
+}
+
+function buildHierarchyTree(users) {
+  const treeContainer = document.getElementById('hierarchy-tree');
+  if (!treeContainer) return;
+
+  const roleEmoji = {
+    ADMIN: '👑', DIRECTOR: '👑', FINANCE: '💰', MANAGER: '👔', EMPLOYEE: '👤'
+  };
+
+  const userMap = {};
+  users.forEach(u => userMap[u.id] = { ...u, children: [] });
+  
+  const roots = [];
+  users.forEach(u => {
+    if (u.manager_id && userMap[u.manager_id]) {
+      userMap[u.manager_id].children.push(userMap[u.id]);
+    } else {
+      roots.push(userMap[u.id]);
+    }
+  });
+
+  function renderNode(node) {
+    let html = `<li><div class="node ${node.role.toLowerCase()}-node">${roleEmoji[node.role] || '👤'} ${node.role}: ${node.name}</div>`;
+    if (node.children.length > 0) {
+      html += `<ul>${node.children.map(renderNode).join('')}</ul>`;
+    }
+    html += `</li>`;
+    return html;
+  }
+
+  const companyName = users.length > 0 && users[0].Company ? users[0].Company.name : 'Organization';
+
+  if (roots.length === 0) {
+    treeContainer.innerHTML = '<p>No users found in company.</p>';
+  } else {
+    treeContainer.innerHTML = `<ul><li><div class="node admin-node" style="background:#f1f5f9; border-color:#94a3b8; color:#0f172a;">🏢 Organization: ${companyName}</div><ul>${roots.map(renderNode).join('')}</ul></li></ul>`;
+  }
+}
+
+async function loadAdminExpenses() {
+  const list = document.getElementById('admin-expenses-list');
+  const details = document.getElementById('admin-expense-details');
+  if (!list) return;
+
+  list.innerHTML = '<p class="text-muted-dark" style="font-style:italic;">Loading expenses...</p>';
+
+  try {
+    const res = await fetch(`${API_BASE}/expenses/all`, { headers: authHeaders() });
+    const expenses = await res.json();
+    
+    if (expenses.length === 0) {
+      list.innerHTML = '<p class="text-muted-dark">No expenses submitted in this company.</p>';
+      return;
+    }
+
+    list.innerHTML = expenses.map(exp => `
+      <li class="approval-item" onclick="showAdminExpenseDetails(${exp.id})" style="cursor:pointer;">
+         <div class="app-left">
+            <strong>${exp.category}</strong>
+            <span class="app-meta">${exp.submitter ? exp.submitter.name : 'Unknown'} • $${exp.amount}</span>
+         </div>
+         <div class="app-right">
+            <span class="badge ${exp.status === 'APPROVED' ? 'badge-success' : exp.status === 'REJECTED' ? 'badge-danger' : 'badge-pending'}">${exp.status}</span>
+         </div>
+      </li>
+    `).join('');
+
+    // store for details click
+    window.adminExpensesData = expenses;
+  } catch(err) {
+    list.innerHTML = `<p style="color:red">Error loading expenses: ${err.message}</p>`;
+  }
+}
+
+window.showAdminExpenseDetails = function(expId) {
+  const exp = window.adminExpensesData?.find(e => e.id === expId);
+  const details = document.getElementById('admin-expense-details');
+  if (!exp || !details) return;
+
+  const dateStr = new Date(exp.date).toLocaleDateString();
+
+  let chainHtml = '';
+  if (exp.approvals && exp.approvals.length > 0) {
+    chainHtml = exp.approvals.map(app => {
+      let icon = '⏳';
+      let cls = 'pending';
+      let text = 'Awaiting Approval';
+      if (app.status === 'APPROVED') { icon = '✓'; cls = 'completed'; text = 'Approved on ' + new Date(app.acted_at).toLocaleDateString(); }
+      else if (app.status === 'REJECTED') { icon = '❌'; cls = 'locked'; text = 'Rejected'; }
+      else if (!app.is_active) { icon = '🔒'; cls = 'locked'; text = 'Pending previous step'; }
+
+      return `
+        <div class="chain-step ${cls}">
+           <div class="step-dot">${icon}</div>
+           <div class="step-info">
+              <strong>${app.approver ? app.approver.name : 'Approver'} (${app.approver?.role})</strong>
+              <span>${text}</span>
+           </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    chainHtml = '<p style="color:#64748b; font-size:0.9rem;">No dynamic approval chain generated.</p>';
+  }
+
+  details.innerHTML = `
+    <h4>Receipt & Details</h4>
+    <div class="receipt-box mt-3 mb-4">
+       <div style="width:100%; height:150px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#94a3b8; font-style:italic; border: 1px dashed #cbd5e1;">(No Receipt Image Attached)</div>
+    </div>
+    <div class="info-grid">
+       <p><strong>Submitter:</strong> ${exp.submitter?.name} (${exp.submitter?.role})</p>
+       <p><strong>Amount:</strong> $${exp.amount} ${exp.original_currency || 'USD'}</p>
+       <p><strong>Category:</strong> ${exp.category}</p>
+       <p><strong>Date:</strong> ${dateStr}</p>
+       <p><strong>Description:</strong> ${exp.description || 'N/A'}</p>
+    </div>
+    <h4 class="mt-4 mb-3">Approval Chain Workflow</h4>
+    <div class="workflow-chain">
+      ${chainHtml}
+    </div>
+  `;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 💼 EMPLOYEE EVENTS
+// ──────────────────────────────────────────────────────────────────
+
+function attachEmployeeEvents() {
+  const form = document.getElementById('employee-expense-form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = document.getElementById('exp-amount').value;
+      const currency = document.getElementById('exp-currency').value;
+      const category = document.getElementById('exp-category').value;
+      const date = document.getElementById('exp-date').value;
+      const description = document.getElementById('exp-desc').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/expenses`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ amount, currency, category, date, description })
+        });
+        const data = await res.json();
+        
+        // Handle specifically no workflow error
+        if(!res.ok) {
+           throw new Error(data.error || 'Failed to submit expense');
+        }
+
+        alert('Expense submitted successfully! Approval chain automatically generated.');
+        form.reset();
+        loadEmployeeExpenses();
+      } catch (err) {
+        alert(err.message + "\\n\\nPlease make sure Admin has assigned you to a manager and updated the Approval Workflow steps.");
+      }
+    });
+  }
+  loadEmployeeExpenses();
+}
+
+async function loadEmployeeExpenses() {
+  const list = document.getElementById('employee-expenses-list');
+  if (!list) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/expenses/my`, { headers: authHeaders() });
+    const expenses = await res.json();
+
+    if (expenses.length === 0) {
+      list.innerHTML = '<p class="text-muted-dark" style="font-size:0.9rem;">No expenses submitted yet. Fill out the form above to submit your first receipt.</p>';
+      return;
+    }
+
+    list.innerHTML = expenses.map(exp => `
+      <li class="approval-item">
+         <div class="app-left">
+            <strong>${exp.category}</strong>
+            <span class="app-meta">$${exp.amount} • ${new Date(exp.date).toLocaleDateString()}</span>
+         </div>
+         <div class="app-right">
+            <span class="badge ${exp.status === 'APPROVED' ? 'badge-success' : exp.status === 'REJECTED' ? 'badge-danger' : 'badge-pending'}">${exp.status}</span>
+         </div>
+      </li>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<p style="color:red">Failed to load your expenses</p>`;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 👔 APPROVER EVENTS (MANAGER, FINANCE, DIRECTOR)
+// ──────────────────────────────────────────────────────────────────
+
+function attachApproverEvents(role) {
+  loadPendingApprovals();
+}
+
+async function loadPendingApprovals() {
+  const list = document.getElementById('pending-approvals-list');
+  if (!list) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/expenses/pending-approvals`, { headers: authHeaders() });
+    const approvals = await res.json();
+
+    if (approvals.length === 0) {
+      list.innerHTML = '<p class="text-muted-dark" style="font-style:italic;">You currently have no expenses awaiting your review.</p>';
+      return;
+    }
+
+    list.innerHTML = approvals.map(app => {
+      const exp = app.Expense;
+      const submitterName = exp?.submitter ? exp.submitter.name : 'Unknown User';
+      const category = exp?.category || 'General';
+      const amount = exp?.amount || '0.00';
+      const desc = exp?.description || 'No description provided';
+      const expId = exp?.id;
+      
+      return `
+      <li class="approval-item" style="flex-direction:column; align-items:flex-start; padding: 20px;">
+         <div style="display:flex; justify-content:space-between; width:100%; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
+           <div class="app-left">
+              <strong style="font-size:1.1rem;">${category}</strong>
+              <span class="app-meta" style="margin-top:5px; display:block;">Submitted by <strong>${submitterName}</strong> • $${amount}</span>
+           </div>
+           <div class="app-right" style="display:flex; gap:10px;">
+              <button class="btn btn-primary" onclick="actOnExpense(${expId}, 'approve')" style="padding: 8px 18px; font-size:0.85rem; border-radius:8px;">Approve ✓</button>
+              <button class="btn btn-danger" onclick="actOnExpense(${expId}, 'reject')" style="padding: 8px 18px; background:#ef4444; color:white; border:none; border-radius:8px; font-size:0.85rem; cursor:pointer;">Reject ❌</button>
+           </div>
+         </div>
+         <div style="font-size:0.9rem; color:#64748b; line-height:1.5;">
+           <p><strong>Description:</strong> ${desc}</p>
+         </div>
+      </li>
+    `}).join('');
+  } catch (err) {
+    list.innerHTML = `<p style="color:#ef4444">Failed to load pending approvals: ${err.message}</p>`;
+  }
+}
+
+window.actOnExpense = async function(expenseId, action) {
+  if (!confirm(`Are you sure you want to ${action.toUpperCase()} this expense?`)) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/expenses/${expenseId}/${action}`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ comments: `Action auto-submitted: ${action}` })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Action failed');
+    
+    alert(`Success: ${data.message || 'Expense updated'}`);
+    loadPendingApprovals();
+  } catch (err) {
+    alert(err.message);
+  }
+}

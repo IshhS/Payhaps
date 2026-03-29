@@ -380,3 +380,45 @@ exports.rejectExpense = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * GET /api/expenses/all
+ * Admin-only: Returns all expenses for the company.
+ */
+exports.getAllExpenses = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Only admins can view all expenses." });
+    }
+
+    const expenses = await Expense.findAll({
+      include: [
+        {
+          model: ExpenseApproval,
+          as: "approvals",
+          include: [
+            {
+              model: User,
+              as: "approver",
+              attributes: ["id", "name", "email", "role"],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: "submitter",
+          attributes: ["id", "name", "email", "role"],
+          where: { company_id: req.user.company_id }
+        },
+      ],
+      order: [
+        ["createdAt", "DESC"],
+        [{ model: ExpenseApproval, as: "approvals" }, "step_order", "ASC"],
+      ],
+    });
+
+    return res.json(expenses);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};

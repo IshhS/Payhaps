@@ -14,7 +14,9 @@ export default function Director() {
             </header>
             <div class="dash-body">
                <h4 class="mb-3">Escalated Approvals</h4>
-               <p class="text-muted-dark" style="font-size:0.9rem;">No escalations require your attention right now.</p>
+               <ul id="pending-approvals-list" class="approval-list">
+                 <p class="text-muted-dark" style="font-size:0.9rem;">Loading escalations...</p>
+               </ul>
             </div>
          </div>
       </div>

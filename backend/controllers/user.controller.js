@@ -1,4 +1,4 @@
-const { User } = require("../models");
+const { User, Company } = require("../models");
 const crypto = require("crypto");
 const { sendInviteEmail } = require("../services/email.service");
 
@@ -69,10 +69,40 @@ exports.getUsers = async (req, res) => {
     const users = await User.findAll({
       where: { company_id: req.user.company_id },
       attributes: ["id", "name", "email", "role", "status", "manager_id", "createdAt"],
+      include: [{ model: Company, attributes: ["name"] }],
       order: [["createdAt", "DESC"]],
     });
 
     res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * PUT /api/users/:id
+ * Admin-only: update a user's role or manager mapping.
+ */
+exports.updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, manager_id } = req.body;
+
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ msg: "Only admin can update users" });
+    }
+
+    const userToUpdate = await User.findOne({ where: { id, company_id: req.user.company_id } });
+    if (!userToUpdate) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    if (role) userToUpdate.role = role;
+    if (manager_id !== undefined) userToUpdate.manager_id = manager_id; // allow null
+
+    await userToUpdate.save();
+
+    res.json({ message: "User updated successfully", user: userToUpdate });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

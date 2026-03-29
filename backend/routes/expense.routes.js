@@ -13,6 +13,7 @@ router.post("/:id/approve", auth, expenseController.approveExpense);
 router.post("/:id/reject", auth, expenseController.rejectExpense);
 
 // ── Shared routes ───────────────────────────────────────────────
+router.get("/all", auth, expenseController.getAllExpenses);
 router.get("/:id", auth, expenseController.getExpenseById);
 
 module.exports = router;

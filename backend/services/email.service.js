@@ -6,15 +6,31 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 // Create transporter lazily to ensure env vars are loaded
 let _transporter = null;
 
-function getTransporter() {
+async function getTransporter() {
   if (!_transporter) {
-    _transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const isMock = !process.env.EMAIL || process.env.EMAIL.includes("***");
+    if (isMock) {
+      // Use Ethereal for testing when real credentials are not provided
+      const testAccount = await nodemailer.createTestAccount();
+      _transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: testAccount.user, // generated ethereal user
+          pass: testAccount.pass, // generated ethereal password
+        },
+      });
+      console.log("Using Ethereal Mail for testing.");
+    } else {
+      _transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+    }
   }
   return _transporter;
 }
@@ -23,10 +39,11 @@ exports.sendInviteEmail = async (email, token) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   const link = `${frontendUrl}/set-password?token=${token}`;
 
-  const transporter = getTransporter();
+  const transporter = await getTransporter();
+  const isMock = !process.env.EMAIL || process.env.EMAIL.includes("***");
 
-  await transporter.sendMail({
-    from: process.env.EMAIL,
+  const info = await transporter.sendMail({
+    from: isMock ? '"Payhaps Local" <noreply@payhaps.local>' : process.env.EMAIL,
     to: email,
     subject: "You're invited to Payhaps!",
     html: `
@@ -43,4 +60,10 @@ exports.sendInviteEmail = async (email, token) => {
       </div>
     `,
   });
+
+  if (isMock) {
+    console.log("==================================================");
+    console.log("Ethereal Mail Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    console.log("==================================================");
+  }
 };

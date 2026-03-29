@@ -86,28 +86,20 @@ export default function Admin() {
                     <h3>Company Hierarchy Configuration</h3>
                     <p class="text-muted-dark">Map roles to establish the approval chain.</p>
                     
-                    <form class="admin-form light-form mt-4 border-bottom pb-4 mb-4">
+                    <form id="hierarchy-form" class="admin-form light-form mt-4 border-bottom pb-4 mb-4">
                        <div class="row align-items-end">
-                          <div class="input-group half">
-                             <label>Mapping Type</label>
-                             <select required>
-                                <option value="emp_mgr">Employee → Manager</option>
-                                <option value="mgr_fin">Manager → Finance</option>
-                                <option value="fin_dir">Finance → Director</option>
-                             </select>
-                          </div>
+                          <!-- We rely directly on User -> Manager assignment instead of strict Role Mapping in the UI for simplicity, 
+                               but we keep this layout. -->
                           <div class="input-group half">
                              <label>Select User</label>
-                             <select required>
-                                <option>Alice (Employee)</option>
-                                <option>Bob (Employee)</option>
+                             <select id="hierarchy-user" required>
+                                <option value="" disabled selected>Loading...</option>
                              </select>
                           </div>
                           <div class="input-group half">
-                             <label>Assign To</label>
-                             <select required>
-                                <option>Charlie (Manager)</option>
-                                <option>Dave (Manager)</option>
+                             <label>Assign To Manager/Approver</label>
+                             <select id="hierarchy-manager" required>
+                                <option value="" disabled selected>Loading...</option>
                              </select>
                           </div>
                        </div>
@@ -116,32 +108,8 @@ export default function Admin() {
 
                     <div class="hierarchy-tree-visual mt-4">
                        <h4>Organization Tree</h4>
-                       <div class="tree">
-                          <ul>
-                             <li>
-                                <div class="node director-node">👑 Director: Elena</div>
-                                <ul>
-                                   <li>
-                                      <div class="node finance-node">💰 Finance: Frank</div>
-                                      <ul>
-                                         <li>
-                                            <div class="node manager-node">👔 Manager: Charlie</div>
-                                            <ul>
-                                               <li><div class="node employee-node">👤 Emp: Alice</div></li>
-                                               <li><div class="node employee-node">👤 Emp: Bob</div></li>
-                                            </ul>
-                                         </li>
-                                         <li>
-                                            <div class="node manager-node">👔 Manager: Dave</div>
-                                            <ul>
-                                               <li><div class="node employee-node">👤 Emp: Sam</div></li>
-                                            </ul>
-                                         </li>
-                                      </ul>
-                                   </li>
-                                </ul>
-                             </li>
-                          </ul>
+                       <div id="hierarchy-tree" class="tree">
+                          <p class="text-muted-dark">Loading tree...</p>
                        </div>
                     </div>
                  </div>
@@ -154,65 +122,13 @@ export default function Admin() {
                        <h3>All Expense Approvals</h3>
                        <p class="text-muted-dark mb-4">View and audit all submitted employee expenses.</p>
                        
-                       <ul class="approval-list">
-                          <li class="approval-item active">
-                             <div class="app-left">
-                                <strong>Software Subscription</strong>
-                                <span class="app-meta">Alice • $49.99</span>
-                             </div>
-                             <div class="app-right">
-                                <span class="badge badge-pending">Pending</span>
-                             </div>
-                          </li>
-                          <li class="approval-item">
-                             <div class="app-left">
-                                <strong>Client Dinner</strong>
-                                <span class="app-meta">Bob • $150.00</span>
-                             </div>
-                             <div class="app-right">
-                                <span class="badge badge-success">Approved</span>
-                             </div>
-                          </li>
+                       <ul id="admin-expenses-list" class="approval-list">
+                          <p class="text-muted-dark" style="font-style:italic;">Loading expenses...</p>
                        </ul>
                     </div>
                     
-                    <div class="approval-details" style="flex:1; border-left: 1px solid #e2e8f0; padding-left: 30px;">
-                       <h4>Receipt & Details</h4>
-                       <div class="receipt-box mt-3 mb-4">
-                          <img src="https://via.placeholder.com/300x200?text=Receipt+Image" alt="Receipt" style="width:100%; border-radius:8px;">
-                       </div>
-                       
-                       <div class="info-grid">
-                          <p><strong>Submitter:</strong> Alice (Employee)</p>
-                          <p><strong>Amount:</strong> $49.99</p>
-                          <p><strong>Category:</strong> Software</p>
-                          <p><strong>Date:</strong> 29 Oct 2026</p>
-                       </div>
-
-                       <h4 class="mt-4 mb-3">Approval Chain</h4>
-                       <div class="workflow-chain">
-                          <div class="chain-step completed">
-                             <div class="step-dot">✓</div>
-                             <div class="step-info">
-                                <strong>Manager (Charlie)</strong>
-                                <span>Approved on Oct 29</span>
-                             </div>
-                          </div>
-                          <div class="chain-step pending">
-                             <div class="step-dot">⏳</div>
-                             <div class="step-info">
-                                <strong>Finance (Frank)</strong>
-                                <span>Awaiting Approval</span>
-                             </div>
-                          </div>
-                          <div class="chain-step locked">
-                             <div class="step-dot">🔒</div>
-                             <div class="step-info">
-                                <strong>Director (Elena)</strong>
-                                <span>Escalation Only</span>
-                             </div>
-                          </div>
-                       </div>
+                    <div id="admin-expense-details" class="approval-details" style="flex:1; border-left: 1px solid #e2e8f0; padding-left: 30px;">
+                       <p class="text-muted-dark">Select an expense to view details.</p>
                     </div>
                  </div>
               </section>
